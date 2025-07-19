@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  getAllReportsClient,
-  getStatusColor,
-  isOverdue,
-} from "@/lib/reports-client";
+import { getAllReportsClient } from "@/lib/reports-client";
+import { getStatusColor, isOverdue } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -204,7 +201,9 @@ export default function ReportsCalendarPage() {
                               {report.client.name}
                             </h3>
                             <p className="text-xs text-gray-600">
-                              {report.report_template?.name || "Невідомий звіт"}
+                              {report.report_template?.name ||
+                                report.custom_report_name ||
+                                "Невідомий звіт"}
                             </p>
                           </div>
                           <Badge

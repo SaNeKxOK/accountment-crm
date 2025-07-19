@@ -13,6 +13,7 @@ import {
   Calendar,
   TrendingUp,
 } from "lucide-react";
+import { getStatusColor } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const [allReports, upcomingReports, clients] = await Promise.all([
@@ -43,20 +44,7 @@ export default async function DashboardPage() {
       .reduce((sum, r) => sum + (r.price || 0), 0),
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "очікується":
-        return "bg-yellow-100 text-yellow-800";
-      case "в_роботі":
-        return "bg-blue-100 text-blue-800";
-      case "подано":
-        return "bg-green-100 text-green-800";
-      case "сплачено":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("uk-UA", {
@@ -225,7 +213,7 @@ export default async function DashboardPage() {
                       </Badge>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {report.report_template?.name || "Невідомий звіт"} •{" "}
+                      {report.report_template?.name || report.custom_report_name || "Невідомий звіт"} •{" "}
                       {report.period}
                     </div>
                   </div>

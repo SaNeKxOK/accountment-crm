@@ -21,6 +21,41 @@ export async function getReportTemplatesClient(): Promise<ReportTemplate[]> {
   return data || [];
 }
 
+export async function getReportClient(id: string): Promise<
+  | (ClientReport & {
+      report_template: ReportTemplate | null;
+      client: { name: string; tax_id: string; type: string };
+    })
+  | null
+> {
+  const {
+    data: { user },
+  } = await supabaseBrowser.auth.getUser();
+
+  if (!user) throw new Error("User not authenticated");
+
+  const { data, error } = await supabaseBrowser
+    .from("client_reports")
+    .select(
+      `
+      *,
+      report_template:report_templates(*),
+      client:clients!inner(name, tax_id, type)
+    `
+    )
+    .eq("client.user_id", user.id)
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // No rows found
+    }
+    throw error;
+  }
+  return data;
+}
+
 export async function getClientReportsClient(
   clientId: string,
   options?: {
@@ -162,47 +197,6 @@ export async function generateReportInstancesClient(
   return data || 0;
 }
 
-// Utility functions (these are pure functions, no server dependency)
-export function formatPeriod(period: string): string {
-  if (period.includes("Q")) {
-    return period;
-  }
-
-  if (period.match(/^\d{4}$/)) {
-    return period;
-  }
-
-  return period;
-}
-
-export function getStatusColor(status: string): string {
-  switch (status) {
-    case "очікується":
-      return "bg-yellow-100 text-yellow-800";
-    case "в_роботі":
-      return "bg-blue-100 text-blue-800";
-    case "подано":
-      return "bg-green-100 text-green-800";
-    case "сплачено":
-      return "bg-gray-100 text-gray-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
-
-export function isOverdue(dueDate: string): boolean {
-  const today = new Date();
-  const due = new Date(dueDate);
-  return due < today;
-}
-
-export function getDaysUntilDue(dueDate: string): number {
-  const today = new Date();
-  const due = new Date(dueDate);
-  const diffTime = due.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-
 // Additional client-side functions for ReportConfigForm
 export async function getClientReportConfigsClient(clientId: string) {
   const { data, error } = await supabaseBrowser
@@ -284,7 +278,7 @@ export async function createManualReportClient(
   return data;
 }
 
-// Manual Report Creation with custom type
+// Manual Report Creation with custom name
 export async function createCustomReportClient(
   clientId: string,
   customReportName: string,

@@ -7,35 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+  getReportClient,
   updateReportStatusClient,
   updateReportNotesClient,
 } from "@/lib/reports-client";
-import { createClient } from "@/lib/supabase/client";
+import { getStatusColor, isOverdue } from "@/lib/utils";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, FileText, DollarSign } from "lucide-react";
 
-interface ReportData {
-  id: string;
-  client_id: string;
-  report_template_id: string;
-  due_date: string;
-  status: string;
-  price: number;
-  notes: string | null;
-  period: string;
-  submitted_date: string | null;
-  report_template: {
-    name: string;
-    frequency: string;
-    description: string;
-    deadline_day: number;
-  };
-  client: {
-    name: string;
-    tax_id: string;
-    type: string;
-  };
-}
+type ReportData = Awaited<ReturnType<typeof getReportClient>>;
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -47,6 +27,7 @@ export default function ReportDetailPage({ params }: PageProps) {
   const [updating, setUpdating] = useState(false);
   const [notes, setNotes] = useState("");
   const [reportId, setReportId] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const getParams = async () => {
@@ -57,25 +38,16 @@ export default function ReportDetailPage({ params }: PageProps) {
   }, [params]);
 
   const loadReport = useCallback(async () => {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("client_reports")
-        .select(
-          `
-          *,
-          report_template:report_templates(*),
-          client:clients(name, tax_id, type)
-        `
-        )
-        .eq("id", reportId)
-        .single();
+    if (!reportId) return;
 
-      if (error) throw error;
+    try {
+      setError("");
+      const data = await getReportClient(reportId);
       setReport(data);
-      setNotes(data.notes || "");
+      setNotes(data?.notes || "");
     } catch (error) {
       console.error("Error loading report:", error);
+      setError("Помилка завантаження звіту");
     } finally {
       setLoading(false);
     }
@@ -102,6 +74,7 @@ export default function ReportDetailPage({ params }: PageProps) {
       await loadReport();
     } catch (error) {
       console.error("Error updating status:", error);
+      setError("Помилка оновлення статусу");
     } finally {
       setUpdating(false);
     }
@@ -116,30 +89,10 @@ export default function ReportDetailPage({ params }: PageProps) {
       await loadReport();
     } catch (error) {
       console.error("Error updating notes:", error);
+      setError("Помилка оновлення приміток");
     } finally {
       setUpdating(false);
     }
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "очікується":
-        return "bg-yellow-100 text-yellow-800";
-      case "в_роботі":
-        return "bg-blue-100 text-blue-800";
-      case "подано":
-        return "bg-green-100 text-green-800";
-      case "сплачено":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const isOverdue = (dueDate: string): boolean => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    return due < today;
   };
 
   const formatDate = (dateString: string): string => {
@@ -167,8 +120,39 @@ export default function ReportDetailPage({ params }: PageProps) {
     return <div className="container mx-auto px-4 py-8">Завантаження...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Link href="/reports">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Назад до звітів
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!report) {
-    return <div className="container mx-auto px-4 py-8">Звіт не знайдено</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-gray-500 mb-4">Звіт не знайдено</p>
+          <p className="text-sm text-gray-400 mb-4">
+            Можливо, цей звіт не існує або у вас немає доступу до нього
+          </p>
+          <Link href="/reports">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Назад до звітів
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -181,7 +165,10 @@ export default function ReportDetailPage({ params }: PageProps) {
           </Button>
         </Link>
         <h1 className="text-3xl font-bold">
-          {report.report_template.name} • {report.period}
+          {report.report_template?.name ||
+            report.custom_report_name ||
+            "Невідомий звіт"}{" "}
+          • {report.period}
         </h1>
       </div>
 
@@ -208,10 +195,12 @@ export default function ReportDetailPage({ params }: PageProps) {
               <Label className="text-sm font-medium text-gray-600">
                 Тип звіту
               </Label>
-              <p>{report.report_template.name}</p>
-              <p className="text-sm text-gray-500">
-                {getFrequencyText(report.report_template.frequency)}
-              </p>
+              <p>{report.report_template?.name || report.custom_report_name || "Невідомий звіт"}</p>
+              {report.report_template?.frequency && (
+                <p className="text-sm text-gray-500">
+                  {getFrequencyText(report.report_template.frequency)}
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-600">
@@ -219,10 +208,14 @@ export default function ReportDetailPage({ params }: PageProps) {
               </Label>
               <p>{report.period}</p>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-600">Опис</Label>
-              <p className="text-sm">{report.report_template.description}</p>
-            </div>
+            {report.report_template?.description && (
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
+                  Опис
+                </Label>
+                <p className="text-sm">{report.report_template.description}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -278,7 +271,7 @@ export default function ReportDetailPage({ params }: PageProps) {
               </Label>
               <p className="flex items-center gap-2 font-semibold">
                 <DollarSign className="h-4 w-4" />
-                {report.price} грн
+                {report.price ? `${report.price} грн` : "Не вказано"}
               </p>
             </div>
           </CardContent>

@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   getClientReportsClient,
-  getStatusColor,
-  isOverdue,
   deleteReportClient,
 } from "@/lib/reports-client";
+import { getStatusColor, isOverdue } from "@/lib/utils";
 import { Trash2, ExternalLink, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -178,6 +177,7 @@ export default function ClientReportsList({
                               <div className="flex items-center gap-2">
                                 <h3 className="font-semibold">
                                   {report.report_template?.name ||
+                                    report.custom_report_name ||
                                     "Невідомий звіт"}
                                 </h3>
                                 <span className="text-sm text-gray-500">

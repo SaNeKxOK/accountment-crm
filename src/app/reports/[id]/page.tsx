@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,21 +37,26 @@ interface ReportData {
   };
 }
 
-export default function ReportDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function ReportDetailPage({ params }: PageProps) {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [notes, setNotes] = useState("");
+  const [reportId, setReportId] = useState<string>("");
 
   useEffect(() => {
-    loadReport();
-  }, [params.id]);
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setReportId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
 
-  const loadReport = async () => {
+  const loadReport = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -63,7 +68,7 @@ export default function ReportDetailPage({
           client:clients(name, tax_id, type)
         `
         )
-        .eq("id", params.id)
+        .eq("id", reportId)
         .single();
 
       if (error) throw error;
@@ -74,7 +79,13 @@ export default function ReportDetailPage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [reportId]);
+
+  useEffect(() => {
+    if (reportId) {
+      loadReport();
+    }
+  }, [reportId, loadReport]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!report) return;
@@ -85,7 +96,7 @@ export default function ReportDetailPage({
         newStatus === "подано" ? new Date().toISOString() : undefined;
       await updateReportStatusClient(
         report.id,
-        newStatus as any,
+        newStatus as "очікується" | "в_роботі" | "подано" | "сплачено",
         submitted_date
       );
       await loadReport();

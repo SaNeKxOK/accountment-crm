@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import type { User } from "@supabase/supabase-js";
 
 export default function DebugPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [cookies, setCookies] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -135,9 +136,9 @@ export default function DebugPage() {
         <h3 className="font-semibold text-yellow-800">How to Debug:</h3>
         <ol className="list-decimal list-inside text-sm text-yellow-700 mt-2">
           <li>Open Developer Tools (F12) → Console</li>
-          <li>Click "Force Login" and check console logs</li>
+          <li>Click &quot;Force Login&quot; and check console logs</li>
           <li>Look for Supabase cookies (highlighted in blue)</li>
-          <li>Click "Try Go Home" to test middleware</li>
+          <li>Click &quot;Try Go Home&quot; to test middleware</li>
           <li>Check console for middleware logs</li>
         </ol>
       </div>

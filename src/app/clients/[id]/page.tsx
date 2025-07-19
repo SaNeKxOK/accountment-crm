@@ -1,43 +1,63 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { getClientClient } from '@/lib/clients-client'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import ManualReportForm from '@/components/reports/ManualReportForm'
-import ClientReportsList from '@/components/reports/ClientReportsList'
-import Link from 'next/link'
+import { useState, useEffect, useCallback } from "react";
+import { getClientClient } from "@/lib/clients-client";
+import { Database } from "@/lib/supabase/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function ClientPage({ params }: { params: { id: string } }) {
-  const [client, setClient] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
+type Client = Database["public"]["Tables"]["clients"]["Row"];
+import { Button } from "@/components/ui/button";
+import ManualReportForm from "@/components/reports/ManualReportForm";
+import ClientReportsList from "@/components/reports/ClientReportsList";
+import Link from "next/link";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function ClientPage({ params }: PageProps) {
+  const [client, setClient] = useState<Client | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [clientId, setClientId] = useState<string>("");
 
   useEffect(() => {
-    loadClient()
-  }, [params.id])
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setClientId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
 
-  const loadClient = async () => {
+  const loadClient = useCallback(async () => {
     try {
-      const clientData = await getClientClient(params.id)
-      setClient(clientData)
+      const clientData = await getClientClient(clientId);
+      setClient(clientData);
     } catch (error) {
-      console.error('Error loading client:', error)
+      console.error("Error loading client:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [clientId]);
+
+  useEffect(() => {
+    if (clientId) {
+      loadClient();
+    }
+  }, [clientId, loadClient]);
 
   const handleReportCreated = () => {
-    setRefreshTrigger(prev => prev + 1)
-  }
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8">Завантаження...</div>
+    return <div className="container mx-auto px-4 py-8">Завантаження...</div>;
   }
 
   if (!client) {
-    return <div className="container mx-auto px-4 py-8">Клієнт не знайдений</div>
+    return (
+      <div className="container mx-auto px-4 py-8">Клієнт не знайдений</div>
+    );
   }
 
   return (
@@ -62,11 +82,15 @@ export default function ClientPage({ params }: { params: { id: string } }) {
           <CardContent>
             <div className="space-y-4">
               <div>
-                <span className="font-medium text-sm text-gray-600">Найменування:</span>
+                <span className="font-medium text-sm text-gray-600">
+                  Найменування:
+                </span>
                 <p className="text-lg">{client.name}</p>
               </div>
               <div>
-                <span className="font-medium text-sm text-gray-600">ЄДРПОУ:</span>
+                <span className="font-medium text-sm text-gray-600">
+                  ЄДРПОУ:
+                </span>
                 <p>{client.tax_id}</p>
               </div>
               <div>
@@ -74,12 +98,16 @@ export default function ClientPage({ params }: { params: { id: string } }) {
                 <p>{client.type}</p>
               </div>
               <div>
-                <span className="font-medium text-sm text-gray-600">Податкова система:</span>
+                <span className="font-medium text-sm text-gray-600">
+                  Податкова система:
+                </span>
                 <p>{client.tax_system}</p>
               </div>
               {client.address && (
                 <div>
-                  <span className="font-medium text-sm text-gray-600">Адреса:</span>
+                  <span className="font-medium text-sm text-gray-600">
+                    Адреса:
+                  </span>
                   <p>{client.address}</p>
                 </div>
               )}
@@ -95,26 +123,26 @@ export default function ClientPage({ params }: { params: { id: string } }) {
             <div className="space-y-4">
               {client.contact_person && (
                 <div>
-                  <span className="font-medium text-sm text-gray-600">Контактна особа:</span>
+                  <span className="font-medium text-sm text-gray-600">
+                    Контактна особа:
+                  </span>
                   <p>{client.contact_person}</p>
                 </div>
               )}
               {client.phone && (
                 <div>
-                  <span className="font-medium text-sm text-gray-600">Телефон:</span>
+                  <span className="font-medium text-sm text-gray-600">
+                    Телефон:
+                  </span>
                   <p>{client.phone}</p>
                 </div>
               )}
               {client.email && (
                 <div>
-                  <span className="font-medium text-sm text-gray-600">Email:</span>
+                  <span className="font-medium text-sm text-gray-600">
+                    Email:
+                  </span>
                   <p>{client.email}</p>
-                </div>
-              )}
-              {client.website && (
-                <div>
-                  <span className="font-medium text-sm text-gray-600">Веб-сайт:</span>
-                  <p>{client.website}</p>
                 </div>
               )}
             </div>
@@ -122,32 +150,21 @@ export default function ClientPage({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      {client.notes && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Примітки</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap">{client.notes}</p>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Manual Report Creation */}
       <div className="mt-8">
-        <ManualReportForm 
-          clientId={client.id} 
-          onReportCreated={handleReportCreated} 
+        <ManualReportForm
+          clientId={client.id}
+          onReportCreated={handleReportCreated}
         />
       </div>
 
       {/* Client Reports List */}
       <div className="mt-8">
-        <ClientReportsList 
-          clientId={client.id} 
-          refreshTrigger={refreshTrigger} 
+        <ClientReportsList
+          clientId={client.id}
+          refreshTrigger={refreshTrigger}
         />
       </div>
     </div>
-  )
+  );
 }

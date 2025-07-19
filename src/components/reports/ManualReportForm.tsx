@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,13 +46,7 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
     price: ''
   })
 
-  useEffect(() => {
-    if (showForm) {
-      loadData()
-    }
-  }, [showForm, clientId])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const [templates, configs] = await Promise.all([
@@ -66,7 +60,13 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
     } finally {
       setLoading(false)
     }
-  }
+  }, [clientId])
+
+  useEffect(() => {
+    if (showForm) {
+      loadData()
+    }
+  }, [showForm, clientId, loadData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,7 +102,6 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
   }
 
   const handleTemplateChange = (templateId: string) => {
-    const template = reportTemplates.find(t => t.id === templateId)
     const config = clientConfigs.find(c => c.report_template_id === templateId)
     
     setFormData(prev => ({
@@ -115,7 +114,6 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
   const generatePeriodSuggestions = () => {
     const currentDate = new Date()
     const currentYear = currentDate.getFullYear()
-    const currentMonth = currentDate.getMonth()
 
     const suggestions = []
     

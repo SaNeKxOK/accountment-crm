@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,11 +51,7 @@ export default function ReportConfigForm({
     price: "",
   });
 
-  useEffect(() => {
-    loadData();
-  }, [clientId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [templates, configs] = await Promise.all([
         getReportTemplatesClient(),
@@ -68,7 +64,11 @@ export default function ReportConfigForm({
     } finally {
       setLoading(false);
     }
-  };
+  }, [clientId]);
+
+  useEffect(() => {
+    loadData();
+  }, [clientId, loadData]);
 
   const handleAddConfig = async () => {
     if (!newConfig.report_template_id || !newConfig.price) return;

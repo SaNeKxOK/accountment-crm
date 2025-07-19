@@ -16,7 +16,7 @@ import { Button } from './button'
 
 interface NavigationProps {
   user?: {
-    email: string
+    email?: string
   }
 }
 
@@ -75,7 +75,7 @@ export function Navigation({ user }: NavigationProps) {
             {user ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-700">
-                  Привіт, {user.email}
+                  Привіт, {user.email || 'Користувач'}
                 </span>
                 <form action="/auth/signout" method="post">
                   <Button
@@ -143,7 +143,7 @@ export function Navigation({ user }: NavigationProps) {
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center px-4">
                 <div className="text-base font-medium text-gray-800">
-                  {user.email}
+                  {user.email || 'Користувач'}
                 </div>
               </div>
               <div className="mt-3 space-y-1">

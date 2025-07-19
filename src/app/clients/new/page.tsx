@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientRecordClient } from '@/lib/clients-client'
+import { Database } from '@/lib/supabase/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+type ClientInsert = Database["public"]["Tables"]["clients"]["Insert"];
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,8 +20,8 @@ export default function NewClientPage() {
   const [formData, setFormData] = useState({
     name: '',
     tax_id: '',
-    type: '',
-    tax_system: '',
+    type: '' as ClientInsert['type'] | '',
+    tax_system: '' as ClientInsert['tax_system'] | '',
     address: '',
     contact_person: '',
     phone: '',
@@ -32,7 +35,18 @@ export default function NewClientPage() {
     setSaving(true)
     
     try {
-      const client = await createClientRecordClient(formData)
+      // Filter out empty strings for enum fields and ensure required fields are set
+      if (!formData.type || !formData.tax_system) {
+        alert('Будь ласка, оберіть тип та податкову систему');
+        return;
+      }
+      
+      const clientData = {
+        ...formData,
+        type: formData.type as ClientInsert['type'],
+        tax_system: formData.tax_system as ClientInsert['tax_system'],
+      }
+      const client = await createClientRecordClient(clientData)
       router.push(`/clients/${client.id}`)
     } catch (error) {
       console.error('Error creating client:', error)

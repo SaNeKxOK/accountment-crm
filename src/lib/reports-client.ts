@@ -3,8 +3,6 @@ import { Database } from "./supabase/types";
 
 type ReportTemplate = Database["public"]["Tables"]["report_templates"]["Row"];
 type ClientReport = Database["public"]["Tables"]["client_reports"]["Row"];
-type ClientReportInsert =
-  Database["public"]["Tables"]["client_reports"]["Insert"];
 type ClientReportUpdate =
   Database["public"]["Tables"]["client_reports"]["Update"];
 type ClientReportConfigInsert =

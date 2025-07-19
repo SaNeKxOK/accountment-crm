@@ -1,5 +1,6 @@
 import { getUserServer } from "@/lib/auth-server";
 import { cookies } from "next/headers";
+import Link from "next/link";
 
 export default async function ServerDebugPage() {
   // Get all cookies
@@ -8,12 +9,12 @@ export default async function ServerDebugPage() {
 
   // Get user server-side
   let user = null;
-  let error = null;
+  let error: string | null = null;
 
   try {
     user = await getUserServer();
   } catch (e) {
-    error = e;
+    error = e instanceof Error ? e.message : String(e);
   }
 
   return (
@@ -25,7 +26,7 @@ export default async function ServerDebugPage() {
         <div className="bg-white p-4 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-2">Server-side User</h2>
           <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-60">
-            {JSON.stringify({ user, error: error?.message }, null, 2)}
+            {JSON.stringify({ user, error }, null, 2)}
           </pre>
         </div>
 
@@ -78,19 +79,19 @@ export default async function ServerDebugPage() {
           ← Client Debug
         </a>
 
-        <a
+        <Link
           href="/login"
           className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Go to Login
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/"
           className="inline-block bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
         >
           Try Home
-        </a>
+        </Link>
       </div>
     </div>
   );

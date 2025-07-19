@@ -6,7 +6,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storageType: 'cookie',
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
@@ -16,7 +15,6 @@ export const supabase = createSupabaseClient<Database>(supabaseUrl, supabaseAnon
 export function createClient() {
   return createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
-      storageType: 'cookie',
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true

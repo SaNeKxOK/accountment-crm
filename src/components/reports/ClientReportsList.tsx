@@ -1,105 +1,119 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { getClientReportsClient, getStatusColor, isOverdue, deleteReportClient } from '@/lib/reports-client'
-import { Trash2, ExternalLink, Calendar, Clock } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  getClientReportsClient,
+  getStatusColor,
+  isOverdue,
+  deleteReportClient,
+} from "@/lib/reports-client";
+import { Trash2, ExternalLink, Calendar, Clock } from "lucide-react";
+import Link from "next/link";
 
 interface ClientReport {
-  id: string
-  client_id: string
-  report_template_id: string
-  due_date: string
-  status: string
-  price: number
-  notes: string | null
-  period: string
-  submitted_date: string | null
+  id: string;
+  client_id: string;
+  report_template_id: string;
+  due_date: string;
+  status: string;
+  price: number | null;
+  notes: string | null;
+  period: string | null;
+  submitted_date: string | null;
   report_template: {
-    name: string
-    frequency: string
-    description: string
-  }
+    name: string;
+    frequency: string;
+    description: string | null;
+  };
 }
 
 interface ClientReportsListProps {
-  clientId: string
-  refreshTrigger?: number
+  clientId: string;
+  refreshTrigger?: number;
 }
 
-export default function ClientReportsList({ clientId, refreshTrigger }: ClientReportsListProps) {
-  const [reports, setReports] = useState<ClientReport[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<string>('')
-  const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear())
+export default function ClientReportsList({
+  clientId,
+  refreshTrigger,
+}: ClientReportsListProps) {
+  const [reports, setReports] = useState<ClientReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("");
+  const [yearFilter, setYearFilter] = useState<number>(
+    new Date().getFullYear()
+  );
 
-  useEffect(() => {
-    loadReports()
-  }, [clientId, refreshTrigger])
-
-  const loadReports = async () => {
-    setLoading(true)
+  const loadReports = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await getClientReportsClient(clientId, {
         status: filter || undefined,
-        year: yearFilter
-      })
-      setReports(data)
+        year: yearFilter,
+      });
+      setReports(data);
     } catch (error) {
-      console.error('Error loading reports:', error)
+      console.error("Error loading reports:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [clientId, filter, yearFilter]);
+
+  useEffect(() => {
+    loadReports();
+  }, [clientId, refreshTrigger, loadReports]);
 
   const handleDeleteReport = async (reportId: string) => {
-    if (!confirm('Видалити цей звіт?')) return
+    if (!confirm("Видалити цей звіт?")) return;
 
     try {
-      await deleteReportClient(reportId)
-      await loadReports()
+      await deleteReportClient(reportId);
+      await loadReports();
     } catch (error) {
-      console.error('Error deleting report:', error)
-      alert('Помилка при видаленні звіту')
+      console.error("Error deleting report:", error);
+      alert("Помилка при видаленні звіту");
     }
-  }
+  };
 
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('uk-UA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
+    return new Date(dateString).toLocaleDateString("uk-UA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const getFrequencyText = (frequency: string): string => {
     switch (frequency) {
-      case 'щомісячно': return 'Щомісячно'
-      case 'щокварталу': return 'Щокварталу'
-      case 'щорічно': return 'Щорічно'
-      default: return frequency
+      case "щомісячно":
+        return "Щомісячно";
+      case "щокварталу":
+        return "Щокварталу";
+      case "щорічно":
+        return "Щорічно";
+      default:
+        return frequency;
     }
-  }
+  };
 
   const groupedReports = reports.reduce((acc, report) => {
-    const status = report.status
+    const status = report.status;
     if (!acc[status]) {
-      acc[status] = []
+      acc[status] = [];
     }
-    acc[status].push(report)
-    return acc
-  }, {} as Record<string, ClientReport[]>)
+    acc[status].push(report);
+    return acc;
+  }, {} as Record<string, ClientReport[]>);
 
-  const statusOrder = ['очікується', 'в_роботі', 'подано', 'сплачено']
+  const statusOrder = ["очікується", "в_роботі", "подано", "сплачено"];
   const statusLabels = {
-    'очікується': 'Очікується',
-    'в_роботі': 'В роботі',
-    'подано': 'Подано',
-    'сплачено': 'Сплачено'
-  }
+    очікується: "Очікується",
+    в_роботі: "В роботі",
+    подано: "Подано",
+    сплачено: "Сплачено",
+  };
 
   return (
     <Card>
@@ -123,8 +137,13 @@ export default function ClientReportsList({ clientId, refreshTrigger }: ClientRe
               onChange={(e) => setYearFilter(Number(e.target.value))}
               className="text-sm border rounded px-2 py-1"
             >
-              {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - 1 + i).map(year => (
-                <option key={year} value={year}>{year}</option>
+              {Array.from(
+                { length: 3 },
+                (_, i) => new Date().getFullYear() - 1 + i
+              ).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
               ))}
             </select>
             <Button size="sm" variant="outline" onClick={loadReports}>
@@ -139,13 +158,15 @@ export default function ClientReportsList({ clientId, refreshTrigger }: ClientRe
         ) : reports.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p className="mb-2">Звіти не знайдено</p>
-            <p className="text-sm">Налаштуйте звіти для клієнта або створіть звіт вручну</p>
+            <p className="text-sm">
+              Налаштуйте звіти для клієнта або створіть звіт вручну
+            </p>
           </div>
         ) : (
           <div className="space-y-6">
-            {statusOrder.map(status => {
-              const statusReports = groupedReports[status] || []
-              if (statusReports.length === 0) return null
+            {statusOrder.map((status) => {
+              const statusReports = groupedReports[status] || [];
+              if (statusReports.length === 0) return null;
 
               return (
                 <div key={status}>
@@ -159,31 +180,45 @@ export default function ClientReportsList({ clientId, refreshTrigger }: ClientRe
                   </div>
                   <div className="space-y-3">
                     {statusReports
-                      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-                      .map(report => (
+                      .sort(
+                        (a, b) =>
+                          new Date(a.due_date).getTime() -
+                          new Date(b.due_date).getTime()
+                      )
+                      .map((report) => (
                         <div key={report.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <h3 className="font-semibold">{report.report_template.name}</h3>
+                                <h3 className="font-semibold">
+                                  {report.report_template.name}
+                                </h3>
                                 <span className="text-sm text-gray-500">
-                                  • {report.period}
+                                  • {report.period || "Не вказано"}
                                 </span>
-                                {isOverdue(report.due_date) && status !== 'подано' && status !== 'сплачено' && (
-                                  <Badge className="bg-red-100 text-red-800 text-xs">
-                                    Прострочено
-                                  </Badge>
-                                )}
+                                {isOverdue(report.due_date) &&
+                                  status !== "подано" &&
+                                  status !== "сплачено" && (
+                                    <Badge className="bg-red-100 text-red-800 text-xs">
+                                      Прострочено
+                                    </Badge>
+                                  )}
                               </div>
                               <p className="text-sm text-gray-600 mt-1">
-                                {getFrequencyText(report.report_template.frequency)}
+                                {getFrequencyText(
+                                  report.report_template.frequency
+                                )}
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold">{report.price} грн</p>
+                              <p className="font-semibold">
+                                {report.price
+                                  ? `${report.price} грн`
+                                  : "Не вказано"}
+                              </p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
@@ -199,7 +234,8 @@ export default function ClientReportsList({ clientId, refreshTrigger }: ClientRe
 
                           {report.notes && (
                             <div className="mb-3 p-2 bg-gray-50 rounded text-sm">
-                              <span className="font-medium">Примітки:</span> {report.notes}
+                              <span className="font-medium">Примітки:</span>{" "}
+                              {report.notes}
                             </div>
                           )}
 
@@ -223,11 +259,11 @@ export default function ClientReportsList({ clientId, refreshTrigger }: ClientRe
                       ))}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

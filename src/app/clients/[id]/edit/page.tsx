@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getClientClient, updateClientClient } from "@/lib/clients-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,14 +10,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { generateReportInstancesClient } from "@/lib/reports-client";
+import { Database } from "@/lib/supabase/types";
 import Link from "next/link";
 
-export default function EditClientPage({ params }: { params: { id: string } }) {
+type Client = Database["public"]["Tables"]["clients"]["Row"];
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function EditClientPage({ params }: PageProps) {
   const router = useRouter();
-  const [client, setClient] = useState<any>(null);
+  const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generatingReports, setGeneratingReports] = useState(false);
+  const [clientId, setClientId] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     tax_id: "",
@@ -30,12 +38,16 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
   });
 
   useEffect(() => {
-    loadClient();
-  }, [params.id]);
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setClientId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
 
-  const loadClient = async () => {
+  const loadClient = useCallback(async () => {
     try {
-      const clientData = await getClientClient(params.id);
+      const clientData = await getClientClient(clientId);
       if (clientData) {
         setClient(clientData);
         setFormData({
@@ -54,7 +66,13 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clientId]);
+
+  useEffect(() => {
+    if (clientId) {
+      loadClient();
+    }
+  }, [clientId, loadClient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,8 +85,8 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
         type: formData.type || undefined,
         tax_system: formData.tax_system || undefined,
       };
-      await updateClientClient(params.id, updateData);
-      router.push(`/clients/${params.id}`);
+      await updateClientClient(clientId, updateData);
+      router.push(`/clients/${clientId}`);
     } catch (error) {
       console.error("Error updating client:", error);
     } finally {
@@ -90,7 +108,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
   const handleGenerateReports = async () => {
     setGeneratingReports(true);
     try {
-      const count = await generateReportInstancesClient(params.id);
+      const count = await generateReportInstancesClient(clientId);
       alert(`Згенеровано ${count} звітів`);
     } catch (error) {
       console.error("Error generating reports:", error);
@@ -114,7 +132,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Редагувати клієнта</h1>
-        <Link href={`/clients/${params.id}`}>
+        <Link href={`/clients/${clientId}`}>
           <Button variant="outline">Скасувати</Button>
         </Link>
       </div>
@@ -253,7 +271,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
           <Button type="submit" disabled={saving}>
             {saving ? "Збереження..." : "Зберегти"}
           </Button>
-          <Link href={`/clients/${params.id}`}>
+          <Link href={`/clients/${clientId}`}>
             <Button type="button" variant="outline">
               Скасувати
             </Button>

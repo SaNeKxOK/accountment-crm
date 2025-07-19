@@ -28,7 +28,7 @@ export async function getClientReportsClient(
     year?: number;
     limit?: number;
   }
-): Promise<(ClientReport & { report_template: ReportTemplate })[]> {
+): Promise<(ClientReport & { report_template: ReportTemplate | null })[]> {
   let query = supabaseBrowser
     .from("client_reports")
     .select(
@@ -66,7 +66,7 @@ export async function getAllReportsClient(options?: {
   limit?: number;
 }): Promise<
   (ClientReport & {
-    report_template: ReportTemplate;
+    report_template: ReportTemplate | null;
     client: { name: string };
   })[]
 > {
@@ -257,7 +257,7 @@ export async function deleteClientReportConfigClient(id: string) {
   if (error) throw error;
 }
 
-// Manual Report Creation
+// Manual Report Creation with template
 export async function createManualReportClient(
   clientId: string,
   reportTemplateId: string,
@@ -270,6 +270,34 @@ export async function createManualReportClient(
     .insert({
       client_id: clientId,
       report_template_id: reportTemplateId,
+      custom_report_name: null,
+      period,
+      due_date: dueDate,
+      price,
+      status: "очікується",
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Manual Report Creation with custom type
+export async function createCustomReportClient(
+  clientId: string,
+  customReportName: string,
+  period: string,
+  dueDate: string,
+  price: number
+): Promise<ClientReport> {
+  const { data, error } = await supabaseBrowser
+    .from("client_reports")
+    .insert({
+      client_id: clientId,
+      report_template_id: null,
+      custom_report_name: customReportName,
       period,
       due_date: dueDate,
       price,

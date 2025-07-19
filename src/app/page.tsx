@@ -264,7 +264,7 @@ export default async function HomePage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600">
-                      {report.report_template.name} • {report.period}
+                      {report.report_template?.name || report.custom_report_name} • {report.period}
                     </p>
                   </div>
                   <div className="text-right">
@@ -304,7 +304,7 @@ export default async function HomePage() {
                     >
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {report.report_template.name}
+                          {report.report_template?.name || report.custom_report_name}
                         </p>
                         <p className="text-xs text-gray-500">
                           {report.client.name}

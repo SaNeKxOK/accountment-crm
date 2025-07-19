@@ -106,7 +106,7 @@ export async function getClientReports(
     year?: number;
     limit?: number;
   }
-): Promise<(ClientReport & { report_template: ReportTemplate })[]> {
+): Promise<(ClientReport & { report_template: ReportTemplate | null })[]> {
   const supabase = await createSupabaseClient();
   let query = supabase
     .from("client_reports")
@@ -145,7 +145,7 @@ export async function getAllReports(options?: {
   limit?: number;
 }): Promise<
   (ClientReport & {
-    report_template: ReportTemplate;
+    report_template: ReportTemplate | null;
     client: { name: string };
   })[]
 > {
@@ -192,7 +192,7 @@ export async function getUpcomingReports(
   days: number = 30
 ): Promise<
   (ClientReport & {
-    report_template: ReportTemplate;
+    report_template: ReportTemplate | null;
     client: { name: string };
   })[]
 > {

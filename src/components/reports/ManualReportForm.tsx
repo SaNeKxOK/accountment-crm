@@ -9,7 +9,8 @@ import { Select } from '@/components/ui/select'
 import { 
   getReportTemplatesClient, 
   getClientReportConfigsClient,
-  createManualReportClient 
+  createManualReportClient,
+  createCustomReportClient 
 } from '@/lib/reports-client'
 import { Plus, X } from 'lucide-react'
 
@@ -40,7 +41,9 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
   const [formData, setFormData] = useState({
+    report_type: 'template', // 'template' or 'custom'
     report_template_id: '',
+    custom_report_name: '',
     period: '',
     due_date: '',
     price: ''
@@ -70,23 +73,44 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.report_template_id || !formData.period || !formData.due_date || !formData.price) {
+    
+    // Validate based on report type
+    const isValidTemplate = formData.report_type === 'template' && formData.report_template_id
+    const isValidCustom = formData.report_type === 'custom' && formData.custom_report_name.trim()
+    
+    if (!isValidTemplate && !isValidCustom) {
+      return
+    }
+    
+    if (!formData.period || !formData.due_date || !formData.price) {
       return
     }
 
     setCreating(true)
     try {
-      await createManualReportClient(
-        clientId,
-        formData.report_template_id,
-        formData.period,
-        formData.due_date,
-        parseFloat(formData.price)
-      )
+      if (formData.report_type === 'template') {
+        await createManualReportClient(
+          clientId,
+          formData.report_template_id,
+          formData.period,
+          formData.due_date,
+          parseFloat(formData.price)
+        )
+      } else {
+        await createCustomReportClient(
+          clientId,
+          formData.custom_report_name.trim(),
+          formData.period,
+          formData.due_date,
+          parseFloat(formData.price)
+        )
+      }
       
       // Reset form
       setFormData({
+        report_type: 'template',
         report_template_id: '',
+        custom_report_name: '',
         period: '',
         due_date: '',
         price: ''
@@ -170,7 +194,9 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
             onClick={() => {
               setShowForm(false)
               setFormData({
+                report_type: 'template',
                 report_template_id: '',
+                custom_report_name: '',
                 period: '',
                 due_date: '',
                 price: ''
@@ -188,21 +214,56 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="template">Тип звіту *</Label>
+              <Label htmlFor="report_type">Спосіб створення *</Label>
               <Select
-                id="template"
-                value={formData.report_template_id}
-                onChange={(e) => handleTemplateChange(e.target.value)}
+                id="report_type"
+                value={formData.report_type}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  report_type: e.target.value as 'template' | 'custom',
+                  report_template_id: '',
+                  custom_report_name: '',
+                  price: ''
+                }))}
                 required
               >
-                <option value="">Оберіть тип звіту</option>
-                {reportTemplates.map(template => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
-                ))}
+                <option value="template">Використати шаблон</option>
+                <option value="custom">Власний тип звіту</option>
               </Select>
             </div>
+
+            {formData.report_type === 'template' ? (
+              <div>
+                <Label htmlFor="template">Тип звіту *</Label>
+                <Select
+                  id="template"
+                  value={formData.report_template_id}
+                  onChange={(e) => handleTemplateChange(e.target.value)}
+                  required
+                >
+                  <option value="">Оберіть тип звіту</option>
+                  {reportTemplates.map(template => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="custom_name">Назва звіту *</Label>
+                <Input
+                  id="custom_name"
+                  value={formData.custom_report_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, custom_report_name: e.target.value }))}
+                  placeholder="Наприклад: Звіт по інвентаризації, Фінансовий аналіз"
+                  required
+                />
+                <div className="mt-1 text-xs text-gray-500">
+                  Введіть власну назву для типу звіту
+                </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="period">Період *</Label>
@@ -248,7 +309,11 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
             <div className="flex space-x-2">
               <Button
                 type="submit"
-                disabled={creating || !formData.report_template_id || !formData.period || !formData.due_date || !formData.price}
+                disabled={creating || 
+                  (!formData.report_template_id && !formData.custom_report_name.trim()) || 
+                  !formData.period || 
+                  !formData.due_date || 
+                  !formData.price}
               >
                 {creating ? 'Створення...' : 'Створити звіт'}
               </Button>
@@ -258,7 +323,9 @@ export default function ManualReportForm({ clientId, onReportCreated }: ManualRe
                 onClick={() => {
                   setShowForm(false)
                   setFormData({
+                    report_type: 'template',
                     report_template_id: '',
+                    custom_report_name: '',
                     period: '',
                     due_date: '',
                     price: ''

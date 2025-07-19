@@ -101,7 +101,7 @@ export default async function ReportsPage() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600">
-                        {report.report_template.name} • {report.period}
+                        {report.report_template?.name || report.custom_report_name} • {report.period}
                       </p>
                       <p className="text-sm text-gray-500">
                         Термін: {formatDate(report.due_date)}
@@ -159,7 +159,7 @@ export default async function ReportsPage() {
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
-                      {report.report_template.name} • {report.period}
+                      {report.report_template?.name || report.custom_report_name} • {report.period}
                     </p>
                     <p className="text-sm text-gray-500">
                       Термін: {formatDate(report.due_date)}

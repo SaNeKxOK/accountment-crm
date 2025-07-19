@@ -75,7 +75,8 @@ export type Database = {
         Row: {
           id: string
           client_id: string
-          report_template_id: string
+          report_template_id: string | null
+          custom_report_name: string | null
           due_date: string
           status: 'очікується' | 'в_роботі' | 'подано' | 'сплачено'
           price: number | null
@@ -89,7 +90,8 @@ export type Database = {
         Insert: {
           id?: string
           client_id: string
-          report_template_id: string
+          report_template_id?: string | null
+          custom_report_name?: string | null
           due_date: string
           status?: 'очікується' | 'в_роботі' | 'подано' | 'сплачено'
           price?: number | null
@@ -103,7 +105,8 @@ export type Database = {
         Update: {
           id?: string
           client_id?: string
-          report_template_id?: string
+          report_template_id?: string | null
+          custom_report_name?: string | null
           due_date?: string
           status?: 'очікується' | 'в_роботі' | 'подано' | 'сплачено'
           price?: number | null

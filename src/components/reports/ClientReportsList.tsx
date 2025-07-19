@@ -13,22 +13,8 @@ import {
 import { Trash2, ExternalLink, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 
-interface ClientReport {
-  id: string;
-  client_id: string;
-  report_template_id: string;
-  due_date: string;
-  status: string;
-  price: number | null;
-  notes: string | null;
-  period: string | null;
-  submitted_date: string | null;
-  report_template: {
-    name: string;
-    frequency: string;
-    description: string | null;
-  };
-}
+// Use the type from the API instead of local interface
+type ClientReport = Awaited<ReturnType<typeof getClientReportsClient>>[0];
 
 interface ClientReportsListProps {
   clientId: string;
@@ -191,7 +177,8 @@ export default function ClientReportsList({
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <h3 className="font-semibold">
-                                  {report.report_template.name}
+                                  {report.report_template?.name ||
+                                    "Невідомий звіт"}
                                 </h3>
                                 <span className="text-sm text-gray-500">
                                   • {report.period || "Не вказано"}
@@ -205,9 +192,11 @@ export default function ClientReportsList({
                                   )}
                               </div>
                               <p className="text-sm text-gray-600 mt-1">
-                                {getFrequencyText(
-                                  report.report_template.frequency
-                                )}
+                                {report.report_template?.frequency
+                                  ? getFrequencyText(
+                                      report.report_template.frequency
+                                    )
+                                  : "Частота не вказана"}
                               </p>
                             </div>
                             <div className="text-right">

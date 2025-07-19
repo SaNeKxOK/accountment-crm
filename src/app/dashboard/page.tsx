@@ -225,7 +225,8 @@ export default async function DashboardPage() {
                       </Badge>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {report.report_template.name} • {report.period}
+                      {report.report_template?.name || "Невідомий звіт"} •{" "}
+                      {report.period}
                     </div>
                   </div>
                   <div className="text-right">

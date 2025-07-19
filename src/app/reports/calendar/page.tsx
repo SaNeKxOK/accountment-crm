@@ -204,7 +204,7 @@ export default function ReportsCalendarPage() {
                               {report.client.name}
                             </h3>
                             <p className="text-xs text-gray-600">
-                              {report.report_template.name}
+                              {report.report_template?.name || "Невідомий звіт"}
                             </p>
                           </div>
                           <Badge

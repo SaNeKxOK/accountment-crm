@@ -1,10 +1,49 @@
-import { getClients } from '@/lib/clients'
+"use client";
+
+import { useEffect, useState } from 'react'
+import { getClientsClient } from '@/lib/clients-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { DeleteClientButton } from '@/components/clients/DeleteClientButton'
 import Link from 'next/link'
+import { Database } from '@/lib/supabase/types'
 
-export default async function ClientsPage() {
-  const clients = await getClients()
+type Client = Database["public"]["Tables"]["clients"]["Row"];
+
+export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const loadClients = async () => {
+    try {
+      const clientsData = await getClientsClient()
+      setClients(clientsData)
+    } catch (error) {
+      console.error('Error loading clients:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadClients()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Клієнти</h1>
+          <Link href="/clients/new">
+            <Button>Додати клієнта</Button>
+          </Link>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-gray-500">Завантаження...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -59,6 +98,13 @@ export default async function ClientsPage() {
                     Редагувати
                   </Button>
                 </Link>
+                <DeleteClientButton 
+                  clientId={client.id} 
+                  clientName={client.name}
+                  variant="outline"
+                  size="sm"
+                  onDelete={loadClients}
+                />
               </div>
             </CardContent>
           </Card>

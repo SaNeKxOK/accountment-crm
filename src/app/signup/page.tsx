@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "@/lib/auth";
+import { signUpAndSignIn } from "@/lib/auth";
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -17,21 +18,33 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    console.log("Attempting to sign in with:", email);
+    if (password !== confirmPassword) {
+      setError("Паролі не співпадають");
+      setLoading(false);
+      return;
+    }
 
-    const { data, error } = await signIn(email, password);
+    if (password.length < 6) {
+      setError("Пароль повинен містити принаймні 6 символів");
+      setLoading(false);
+      return;
+    }
 
-    console.log("Sign in result:", { data, error });
+    console.log("Attempting to sign up and sign in with:", email);
+
+    const { data, error } = await signUpAndSignIn(email, password);
+
+    console.log("Sign up and sign in result:", { data, error });
 
     if (error) {
-      console.error("Sign in error:", error);
+      console.error("Sign up error:", error);
       setError(error.message);
-    } else if (data.user) {
-      console.log("Sign in successful, redirecting...");
-      // Try direct navigation without reload
+    } else if (data?.user) {
+      console.log("Sign up and sign in successful, redirecting...");
+      // Redirect to dashboard immediately
       router.push("/");
     } else {
-      setError("Не вдалось увійти. Спробуйте ще раз.");
+      setError("Не вдалось зареєструватись. Спробуйте ще раз.");
     }
 
     setLoading(false);
@@ -42,15 +55,15 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Увійти в акаунт
+            Створити акаунт
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Або{" "}
             <Link
-              href="/signup"
+              href="/login"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
-              створити новий акаунт
+              увійти в існуючий акаунт
             </Link>
           </p>
         </div>
@@ -89,6 +102,23 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Підтвердити пароль
+            </label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-red-700 text-sm">{error}</div>
@@ -99,7 +129,7 @@ export default function LoginPage() {
             disabled={loading}
             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            {loading ? "Вхід..." : "Увійти"}
+            {loading ? "Реєстрація..." : "Зареєструватись"}
           </button>
         </form>
       </div>

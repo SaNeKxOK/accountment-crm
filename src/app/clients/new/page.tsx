@@ -1,66 +1,101 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClientRecordClient } from '@/lib/clients-client'
-import { Database } from '@/lib/supabase/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClientRecordClient } from "@/lib/clients-client";
+import { Database } from "@/lib/supabase/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type ClientInsert = Database["public"]["Tables"]["clients"]["Insert"];
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
-import Link from 'next/link'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import Link from "next/link";
 
 export default function NewClientPage() {
-  const router = useRouter()
-  const [saving, setSaving] = useState(false)
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    name: '',
-    tax_id: '',
-    type: '' as ClientInsert['type'] | '',
-    tax_system: '' as ClientInsert['tax_system'] | '',
-    address: '',
-    contact_person: '',
-    phone: '',
-    email: '',
-    website: '',
-    notes: ''
-  })
+    name: "",
+    tax_id: "",
+    type: "" as ClientInsert["type"] | "",
+    tax_system: "" as ClientInsert["tax_system"] | "",
+    address: "",
+    contact_person: "",
+    phone: "",
+    email: "",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+
     try {
-      // Filter out empty strings for enum fields and ensure required fields are set
-      if (!formData.type || !formData.tax_system) {
-        alert('Будь ласка, оберіть тип та податкову систему');
+      // Validate required fields
+      if (!formData.name.trim()) {
+        setError("Будь ласка, введіть найменування клієнта");
         return;
       }
-      
-      const clientData = {
-        ...formData,
-        type: formData.type as ClientInsert['type'],
-        tax_system: formData.tax_system as ClientInsert['tax_system'],
-      }
-      const client = await createClientRecordClient(clientData)
-      router.push(`/clients/${client.id}`)
-    } catch (error) {
-      console.error('Error creating client:', error)
-    } finally {
-      setSaving(false)
-    }
-  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
+      if (!formData.tax_id.trim()) {
+        setError("Будь ласка, введіть ЄДРПОУ");
+        return;
+      }
+
+      if (!formData.type) {
+        setError("Будь ласка, оберіть тип клієнта");
+        return;
+      }
+
+      if (!formData.tax_system) {
+        setError("Будь ласка, оберіть податкову систему");
+        return;
+      }
+
+      const clientData: Omit<ClientInsert, "user_id"> = {
+        name: formData.name.trim(),
+        tax_id: formData.tax_id.trim(),
+        type: formData.type as ClientInsert["type"],
+        tax_system: formData.tax_system as ClientInsert["tax_system"],
+        address: formData.address.trim() || null,
+        contact_person: formData.contact_person.trim() || null,
+        phone: formData.phone.trim() || null,
+        email: formData.email.trim() || null,
+      };
+
+      console.log("Creating client with data:", clientData);
+
+      const client = await createClientRecordClient(clientData);
+
+      console.log("Client created successfully:", client);
+      router.push(`/clients/${client.id}`);
+    } catch (error: unknown) {
+      console.error("Error creating client:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Помилка при створенні клієнта. Спробуйте ще раз.";
+      setError(errorMessage);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
+      [e.target.name]: e.target.value,
+    }));
+    // Clear error when user starts typing
+    if (error) setError("");
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -70,6 +105,12 @@ export default function NewClientPage() {
           <Button variant="outline">Скасувати</Button>
         </Link>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -109,13 +150,11 @@ export default function NewClientPage() {
                 required
               >
                 <option value="">Оберіть тип</option>
+                <option value="ФОП_1">ФОП 1 група</option>
+                <option value="ФОП_2">ФОП 2 група</option>
+                <option value="ФОП_3">ФОП 3 група</option>
                 <option value="ТОВ">ТОВ</option>
-                <option value="ПАТ">ПАТ</option>
-                <option value="ПрАТ">ПрАТ</option>
-                <option value="ФОП">ФОП</option>
-                <option value="КТ">КТ</option>
-                <option value="ПТ">ПТ</option>
-                <option value="Інше">Інше</option>
+                <option value="ПП">ПП (Приватне підприємство)</option>
               </Select>
             </div>
             <div>
@@ -128,10 +167,8 @@ export default function NewClientPage() {
                 required
               >
                 <option value="">Оберіть податкову систему</option>
-                <option value="Загальна">Загальна</option>
-                <option value="Спрощена">Спрощена</option>
-                <option value="Єдиний податок">Єдиний податок</option>
-                <option value="ПДВ">ПДВ</option>
+                <option value="загальна">Загальна</option>
+                <option value="спрощена">Спрощена</option>
               </Select>
             </div>
             <div>
@@ -184,42 +221,12 @@ export default function NewClientPage() {
                 placeholder="email@example.com"
               />
             </div>
-            <div>
-              <Label htmlFor="website">Веб-сайт</Label>
-              <Input
-                id="website"
-                name="website"
-                type="url"
-                value={formData.website}
-                onChange={handleChange}
-                placeholder="https://example.com"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Примітки</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <Label htmlFor="notes">Примітки</Label>
-              <Textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Додаткова інформація про клієнта"
-              />
-            </div>
           </CardContent>
         </Card>
 
         <div className="flex space-x-4">
           <Button type="submit" disabled={saving}>
-            {saving ? 'Створення...' : 'Створити клієнта'}
+            {saving ? "Створення..." : "Створити клієнта"}
           </Button>
           <Link href="/clients">
             <Button type="button" variant="outline">
@@ -229,5 +236,5 @@ export default function NewClientPage() {
         </div>
       </form>
     </div>
-  )
+  );
 }

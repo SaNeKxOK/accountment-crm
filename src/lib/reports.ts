@@ -2,12 +2,15 @@ import { createClient as createSupabaseClient } from "./supabase/server";
 import { Database } from "./supabase/types";
 
 type ReportTemplate = Database["public"]["Tables"]["report_templates"]["Row"];
-type ClientReportConfig = Database["public"]["Tables"]["client_report_configs"]["Row"];
-type ClientReportConfigInsert = Database["public"]["Tables"]["client_report_configs"]["Insert"];
-type ClientReportConfigUpdate = Database["public"]["Tables"]["client_report_configs"]["Update"];
+type ClientReportConfig =
+  Database["public"]["Tables"]["client_report_configs"]["Row"];
+type ClientReportConfigInsert =
+  Database["public"]["Tables"]["client_report_configs"]["Insert"];
+type ClientReportConfigUpdate =
+  Database["public"]["Tables"]["client_report_configs"]["Update"];
 type ClientReport = Database["public"]["Tables"]["client_reports"]["Row"];
-type ClientReportInsert = Database["public"]["Tables"]["client_reports"]["Insert"];
-type ClientReportUpdate = Database["public"]["Tables"]["client_reports"]["Update"];
+type ClientReportUpdate =
+  Database["public"]["Tables"]["client_reports"]["Update"];
 
 // Report Templates
 export async function getReportTemplates(): Promise<ReportTemplate[]> {
@@ -21,7 +24,9 @@ export async function getReportTemplates(): Promise<ReportTemplate[]> {
   return data || [];
 }
 
-export async function getReportTemplate(id: string): Promise<ReportTemplate | null> {
+export async function getReportTemplate(
+  id: string
+): Promise<ReportTemplate | null> {
   const supabase = await createSupabaseClient();
   const { data, error } = await supabase
     .from("report_templates")
@@ -34,14 +39,18 @@ export async function getReportTemplate(id: string): Promise<ReportTemplate | nu
 }
 
 // Client Report Configurations
-export async function getClientReportConfigs(clientId: string): Promise<(ClientReportConfig & { report_template: ReportTemplate })[]> {
+export async function getClientReportConfigs(
+  clientId: string
+): Promise<(ClientReportConfig & { report_template: ReportTemplate })[]> {
   const supabase = await createSupabaseClient();
   const { data, error } = await supabase
     .from("client_report_configs")
-    .select(`
+    .select(
+      `
       *,
       report_template:report_templates(*)
-    `)
+    `
+    )
     .eq("client_id", clientId)
     .order("created_at");
 
@@ -49,7 +58,9 @@ export async function getClientReportConfigs(clientId: string): Promise<(ClientR
   return data || [];
 }
 
-export async function createClientReportConfig(config: Omit<ClientReportConfigInsert, "id">): Promise<ClientReportConfig> {
+export async function createClientReportConfig(
+  config: Omit<ClientReportConfigInsert, "id">
+): Promise<ClientReportConfig> {
   const supabase = await createSupabaseClient();
   const { data, error } = await supabase
     .from("client_report_configs")
@@ -99,10 +110,12 @@ export async function getClientReports(
   const supabase = await createSupabaseClient();
   let query = supabase
     .from("client_reports")
-    .select(`
+    .select(
+      `
       *,
       report_template:report_templates(*)
-    `)
+    `
+    )
     .eq("client_id", clientId);
 
   if (options?.status) {
@@ -110,8 +123,9 @@ export async function getClientReports(
   }
 
   if (options?.year) {
-    query = query.gte("due_date", `${options.year}-01-01`)
-                 .lt("due_date", `${options.year + 1}-01-01`);
+    query = query
+      .gte("due_date", `${options.year}-01-01`)
+      .lt("due_date", `${options.year + 1}-01-01`);
   }
 
   if (options?.limit) {
@@ -129,7 +143,12 @@ export async function getAllReports(options?: {
   status?: string;
   year?: number;
   limit?: number;
-}): Promise<(ClientReport & { report_template: ReportTemplate; client: { name: string } })[]> {
+}): Promise<
+  (ClientReport & {
+    report_template: ReportTemplate;
+    client: { name: string };
+  })[]
+> {
   const supabase = await createSupabaseClient();
   const {
     data: { user },
@@ -139,11 +158,13 @@ export async function getAllReports(options?: {
 
   let query = supabase
     .from("client_reports")
-    .select(`
+    .select(
+      `
       *,
       report_template:report_templates(*),
       client:clients!inner(name)
-    `)
+    `
+    )
     .eq("client.user_id", user.id);
 
   if (options?.status) {
@@ -151,8 +172,9 @@ export async function getAllReports(options?: {
   }
 
   if (options?.year) {
-    query = query.gte("due_date", `${options.year}-01-01`)
-                 .lt("due_date", `${options.year + 1}-01-01`);
+    query = query
+      .gte("due_date", `${options.year}-01-01`)
+      .lt("due_date", `${options.year + 1}-01-01`);
   }
 
   if (options?.limit) {
@@ -166,7 +188,14 @@ export async function getAllReports(options?: {
   return data || [];
 }
 
-export async function getUpcomingReports(days: number = 30): Promise<(ClientReport & { report_template: ReportTemplate; client: { name: string } })[]> {
+export async function getUpcomingReports(
+  days: number = 30
+): Promise<
+  (ClientReport & {
+    report_template: ReportTemplate;
+    client: { name: string };
+  })[]
+> {
   const supabase = await createSupabaseClient();
   const {
     data: { user },
@@ -174,16 +203,20 @@ export async function getUpcomingReports(days: number = 30): Promise<(ClientRepo
 
   if (!user) throw new Error("User not authenticated");
 
-  const today = new Date().toISOString().split('T')[0];
-  const futureDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
+  const futureDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
 
   const { data, error } = await supabase
     .from("client_reports")
-    .select(`
+    .select(
+      `
       *,
       report_template:report_templates(*),
       client:clients!inner(name)
-    `)
+    `
+    )
     .eq("client.user_id", user.id)
     .gte("due_date", today)
     .lte("due_date", futureDate)
@@ -201,7 +234,7 @@ export async function updateReportStatus(
 ): Promise<ClientReport> {
   const supabase = await createSupabaseClient();
   const updateData: ClientReportUpdate = { status };
-  
+
   if (submitted_date && status === "подано") {
     updateData.submitted_date = submitted_date;
   }
@@ -217,7 +250,10 @@ export async function updateReportStatus(
   return data;
 }
 
-export async function updateReportNotes(id: string, notes: string): Promise<ClientReport> {
+export async function updateReportNotes(
+  id: string,
+  notes: string
+): Promise<ClientReport> {
   const supabase = await createSupabaseClient();
   const { data, error } = await supabase
     .from("client_reports")
@@ -251,11 +287,11 @@ export function formatPeriod(period: string): string {
   if (period.includes("Q")) {
     return period; // Already formatted like "Q1 2024"
   }
-  
+
   if (period.match(/^\d{4}$/)) {
     return period; // Year format like "2024"
   }
-  
+
   // Month format like "March 2024"
   return period;
 }

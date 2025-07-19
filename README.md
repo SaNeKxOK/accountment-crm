@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Accountment CRM
 
-## Getting Started
+CRM система для ведення обліку клієнтів та звітності для бухгалтерських послуг.
 
-First, run the development server:
+## Встановлення
+
+1. Клонуйте репозиторій
+2. Встановіть залежності: `npm install`
+3. Скопіюйте `.env.example` в `.env.local` та налаштуйте змінні середовища
+4. Налаштуйте базу даних Supabase
+5. Запустіть проект: `npm run dev`
+
+## Налаштування Supabase
+
+### 1. Основні налаштування
+
+Створіть новий проект на [supabase.com](https://supabase.com) та отримайте:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### 2. Відключення підтвердження email (опціонально)
+
+Для того, щоб користувачі могли реєструватися без підтвердження email:
+
+1. Зайдіть в панель адміністратора Supabase
+2. Перейдіть до **Authentication** → **Settings**
+3. В розділі **Email Auth** знайдіть **"Confirm email"**
+4. **Відключіть** опцію "Enable email confirmations"
+5. Збережіть зміни
+
+Альтернативно, можете налаштувати через SQL:
+
+```sql
+-- Відключити підтвердження email
+UPDATE auth.config
+SET email_confirm = false
+WHERE id = 'default';
+```
+
+### 3. Створення схеми бази даних
+
+Виконайте SQL з файлу `supabase/schema.sql` в SQL Editor вашого Supabase проекту.
+
+### 4. Застосування міграцій
+
+Виконайте SQL з файлу `supabase/migrations/001_extend_reports_schema.sql`.
+
+### 5. Початкові дані (опціонально)
+
+Для створення тестових даних:
+
+```bash
+npm run seed
+```
+
+## Запуск
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Додаток буде доступний за адресою [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Функціональність
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Управління клієнтами
+- Налаштування звітності
+- Календар звітів з фільтрацією
+- Відстеження статусів звітів
+- Автентифікація користувачів
 
-## Learn More
+## Розробка
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` - запуск в режимі розробки
+- `npm run build` - збірка проекту
+- `npm run seed` - створення тестових даних
+- `npm run check-db` - перевірка стану бази даних

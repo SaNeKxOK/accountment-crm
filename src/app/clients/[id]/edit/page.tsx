@@ -7,9 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { generateReportInstancesClient } from "@/lib/reports-client";
 import { Database } from "@/lib/supabase/types";
 import Link from "next/link";
 
@@ -24,7 +22,6 @@ export default function EditClientPage({ params }: PageProps) {
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [generatingReports, setGeneratingReports] = useState(false);
   const [clientId, setClientId] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
@@ -103,19 +100,6 @@ export default function EditClientPage({ params }: PageProps) {
       ...prev,
       [e.target.name]: e.target.value,
     }));
-  };
-
-  const handleGenerateReports = async () => {
-    setGeneratingReports(true);
-    try {
-      const count = await generateReportInstancesClient(clientId);
-      alert(`Згенеровано ${count} звітів`);
-    } catch (error) {
-      console.error("Error generating reports:", error);
-      alert("Помилка при генеруванні звітів");
-    } finally {
-      setGeneratingReports(false);
-    }
   };
 
   if (loading) {
@@ -239,30 +223,6 @@ export default function EditClientPage({ params }: PageProps) {
                 value={formData.email}
                 onChange={handleChange}
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Генерування звітів</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Генерування звітів створює автоматичні терміни подачі на
-                поточний рік для всіх налаштованих звітів клієнта.
-              </p>
-              <Button
-                type="button"
-                onClick={handleGenerateReports}
-                disabled={generatingReports}
-                variant="outline"
-              >
-                {generatingReports
-                  ? "Генерування..."
-                  : "Згенерувати звіти на рік"}
-              </Button>
             </div>
           </CardContent>
         </Card>

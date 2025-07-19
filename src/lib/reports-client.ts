@@ -60,6 +60,54 @@ export async function getClientReportsClient(
   return data || [];
 }
 
+export async function getAllReportsClient(options?: {
+  status?: string;
+  year?: number;
+  limit?: number;
+}): Promise<
+  (ClientReport & {
+    report_template: ReportTemplate;
+    client: { name: string };
+  })[]
+> {
+  const {
+    data: { user },
+  } = await supabaseBrowser.auth.getUser();
+
+  if (!user) throw new Error("User not authenticated");
+
+  let query = supabaseBrowser
+    .from("client_reports")
+    .select(
+      `
+      *,
+      report_template:report_templates(*),
+      client:clients!inner(name)
+    `
+    )
+    .eq("client.user_id", user.id);
+
+  if (options?.status) {
+    query = query.eq("status", options.status);
+  }
+
+  if (options?.year) {
+    query = query
+      .gte("due_date", `${options.year}-01-01`)
+      .lt("due_date", `${options.year + 1}-01-01`);
+  }
+
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  query = query.order("due_date", { ascending: true });
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
 export async function updateReportStatusClient(
   id: string,
   status: "очікується" | "в_роботі" | "подано" | "сплачено",

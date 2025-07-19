@@ -17,6 +17,36 @@ export async function signUp(email: string, password: string) {
   return { data, error };
 }
 
+export async function signUpAndSignIn(email: string, password: string) {
+  // First, try to sign up
+  const { data: signUpData, error: signUpError } =
+    await supabaseBrowser.auth.signUp({
+      email,
+      password,
+    });
+
+  if (signUpError) {
+    return { data: null, error: signUpError };
+  }
+
+  // If signup was successful, immediately sign in
+  if (signUpData.user) {
+    const { data: signInData, error: signInError } =
+      await supabaseBrowser.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    if (signInError) {
+      return { data: signUpData, error: signInError };
+    }
+
+    return { data: signInData, error: null };
+  }
+
+  return { data: signUpData, error: null };
+}
+
 export async function signOut() {
   const { error } = await supabaseBrowser.auth.signOut();
   return { error };
